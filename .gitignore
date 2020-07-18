@@ -1,0 +1,10 @@
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+test.*
+*.json
+*.raw
+*.tex
