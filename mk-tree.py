@@ -52,6 +52,8 @@ for ob in obs['results']:
             print('exists')
         node['_name'] = a['name']
         node['_rank'] = a['rank']
+        if 'preferred_common_name' in a:
+            node['_common_name'] = a['preferred_common_name']
         node['_parent'] = parent
         parent = node
 
@@ -96,20 +98,23 @@ print()
 
 def mk_qtree(node, path):
     qtree = ''
-    if node in path:
+    active = (node in path)
+    if active:
         qtree = r'[.{'
-        if path[0] == node or path[-1] == node:
-            qtree += r'\strong '
         qtree += r'{\textsc{\tiny %s}} ' % node['_rank']
-        qtree += r'%s ' % node['_name']
+        if path[0] == node or path[-1] == node:
+            qtree += r'\textbf'
+        qtree += r'{%s} ' % node['_name']
         qtree += r'\hspace{1cm}'
+        if '_common_name' in node:
+            qtree += r'\\ {\tiny %s} ' % node['_common_name']
         qtree += r'} '
     for a in node:
         if a.startswith('_'):
             continue
         qtree += mk_qtree(node[a], path)
-    if node in path:
-        qtree += ']'
+    if active:
+        qtree += ' ]'
     return qtree
 
 
@@ -119,6 +124,7 @@ with open('out.tex', 'w') as f:
 
     \usepackage[utf8]{inputenc}
     \usepackage{qtree}
+    \usepackage{adjustbox}
 
     \title{iNaturalist Obervations}
     \author{Chris Merck}
@@ -130,28 +136,31 @@ with open('out.tex', 'w') as f:
     \frame{\titlepage}
     ''')
 
-    for slide in slides:
+    for slide in slides[:10]:
         if slide['type'] == 'taxon':
             f.write(r'''
                 \begin{frame}
-                \frametitle{%s}
+                \frametitle{%s}''' % slide['taxon']['_name'])
+            if '_common_name' in slide['taxon']:
+                f.write(r'''\framesubtitle{%s}''' % slide['taxon']['_common_name'])
+            f.write(r'''
                 TODO
                 \end{frame}
-                ''' % (
-                    slide['taxon']['_name']
-                ))
+                ''')
         elif slide['type'] == 'path':
             qtree = mk_qtree(tree, slide['path'])
             f.write(r'''
                 \begin{frame}
                 \frametitle{relationship}
+                \begin{center}
+                \begin{adjustbox}{max totalheight=8cm}
                 \Tree%s
+                \end{adjustbox}
+                \end{center}
                 \end{frame}
                 ''' % (
                     qtree
                 ))
-            #print(path_str(slide['path']))
-            break
 
 
     f.write(r'\end{document}')
