@@ -52,6 +52,7 @@ for ob in obs['results']:
             print('exists')
         node['_name'] = a['name']
         node['_rank'] = a['rank']
+        node['_id'] = a['id']
         if 'preferred_common_name' in a:
             node['_common_name'] = a['preferred_common_name']
         node['_parent'] = parent
@@ -64,6 +65,11 @@ slides = []
 
 def path_str(path):
     return(' -- '.join([node['_name'] for node in path]))
+
+def find_photos(taxon):
+    taxon_id = taxon['_id']
+    dir = 'photo_large/%d' % taxon_id
+    return os.listdir(dir)
 
 path = None # in media res
 def walk(x, indent=0):
@@ -78,7 +84,8 @@ def walk(x, indent=0):
         # leaf slide
         slides.append({
             'type': 'taxon',
-            'taxon': x})
+            'taxon': x,
+            'photos': find_photos(x)})
         path = []
     for a in x:
         if a.startswith('_'):
@@ -126,9 +133,15 @@ with open('out.tex', 'w') as f:
     \usepackage{qtree}
     \usepackage{adjustbox}
 
+    \usecolortheme{cormorant}
+
+    \graphicspath{
+        {./photo_large/}
+    }
+
     \title{iNaturalist Obervations}
     \author{Chris Merck}
-    \institute{Overleaf}
+    %\institute{Overleaf}
     \date{2020}
 
     \begin{document}
@@ -138,22 +151,30 @@ with open('out.tex', 'w') as f:
 
     for slide in slides[:10]:
         if slide['type'] == 'taxon':
-            f.write(r'''
-                \begin{frame}
-                \frametitle{%s}''' % slide['taxon']['_name'])
-            if '_common_name' in slide['taxon']:
-                f.write(r'''\framesubtitle{%s}''' % slide['taxon']['_common_name'])
-            f.write(r'''
-                TODO
-                \end{frame}
+            for photo_fn in slide['photos']:
+                #f.write(r'''{\usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{1110795/00-74757231}}''')
+                f.write(r'''
+                    \begin{frame}
+                    \frametitle{%s}''' % slide['taxon']['_name'])
+                if '_common_name' in slide['taxon']:
+                    f.write(r'''\framesubtitle{%s}''' % slide['taxon']['_common_name'])
+                f.write(r'''
+                \begin{center}
                 ''')
+                f.write(r'''\includegraphics[height = 0.8 \textheight, width = \textwidth, keepaspectratio]{%s/%s}''' % (slide['taxon']['_id'], photo_fn))
+                f.write(r'''
+                \end{center}
+                ''')
+                f.write(r'''
+                    \end{frame}
+                    ''')
         elif slide['type'] == 'path':
             qtree = mk_qtree(tree, slide['path'])
             f.write(r'''
                 \begin{frame}
                 \frametitle{relationship}
                 \begin{center}
-                \begin{adjustbox}{max totalheight=8cm}
+                \begin{adjustbox}{max totalheight=8cm, max width=10cm}
                 \Tree%s
                 \end{adjustbox}
                 \end{center}
