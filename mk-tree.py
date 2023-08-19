@@ -17,6 +17,8 @@ with open('observations.json') as f:
 def new_node():
     return {}
 
+photo_data = dict()
+
 print("#"*30)
 print("# Building phylogenetic tree ")
 print("#"*30)
@@ -149,7 +151,7 @@ with open('out.tex', 'w') as f:
     \frame{\titlepage}
     ''')
 
-    for slide in slides[:10]:
+    for slide in slides:# [:10]:
         if slide['type'] == 'taxon':
             for photo_fn in slide['photos']:
                 #f.write(r'''{\usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{1110795/00-74757231}}''')
